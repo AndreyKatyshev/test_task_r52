@@ -1,7 +1,9 @@
+import io
 import csv
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views import View
 
 from .models import Author, Book
 
@@ -13,14 +15,11 @@ def download_x2(request):
     desired_books = []
     for book in general_books_list:
         if len(book.authors.all()) > 1:
-            desired_books.append(book)
-
-    with open("books_m_a.txt", mode="w", encoding='utf-8') as w_file:
-        file_writer = csv.writer(w_file)
-        file_writer.writerow(desired_books)
-
-    with open("books_m_a.txt", encoding='utf-8') as file:
-        return HttpResponse(file.read(),  content_type="text/csv")
+            desired_books.append(book.title)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(desired_books)
+    return HttpResponse(buffer.getvalue(),  content_type="text/csv")
 
 
 def all_books_for_author(request, author_id):
@@ -31,14 +30,12 @@ def all_books_for_author(request, author_id):
     desired_books = []
     for book in general_books_list:
         desired_books.append(book.title)
-    return HttpResponse(
-        json.dumps(desired_books), content_type='application/json'
-    )
+    return JsonResponse(desired_books, safe=False)
 
 
 def add_authors(request):
     """принимает POST запрос с JSON в котором имена авторов.
-    добавляет в базу данных имена которых ещё нет.
+    добавляет в базу данных имена которых там ещё нет.
     При GET запросе подскажет что происходит."""
     existing_authors = [author.name for author in Author.objects.all()]
     if request.method == 'POST':
@@ -46,20 +43,46 @@ def add_authors(request):
         for author in json.loads(request.body):
             name = author['name']
             if name in existing_authors:
-                pass
                 response += (f'{name} - уже есть в нашей базе, спасибо')
                 response += '<br>'
             else:
-                Author.objects.create(name=author['name'])
                 name = author['name']
+                Author.objects.create(name=author['name'])
                 response += (f'{name} - добавлен в список авторов')
                 response += '<br>'
         return HttpResponse(response)
     if request.method == 'GET':
         response = (
             'Привет, по этому адресу нужно отправлять пост запрос с JSON '
-            'в котором имена авторов, мы добавим их в нашу базу ' + '<br>'
-            'А вот какие писатели нам уже известны:' + '<br>'
+            'в котором имена авторов, мы добавим их в нашу базу.'
+            'А вот какие писатели нам уже известны:'
         )
         response += (',  '.join(existing_authors))
+        return HttpResponse(response)
+
+
+class AddAuthors(View):
+    existing_authors = [author.name for author in Author.objects.all()]
+
+    def post(self, request):
+        response = ''
+        for author in json.loads(request.body):
+            name = author['name']
+            if name in self.existing_authors:
+                response += (f'{name} - уже есть в нашей базе, спасибо')
+                response += '<br>'
+            else:
+                name = author['name']
+                Author.objects.create(name=author['name'])
+                response += (f'{name} - добавлен в список авторов')
+                response += '<br>'
+        return HttpResponse(response)
+
+    def get(self, request):
+        response = (
+            'Привет, по этому адресу нужно отправлять пост запрос с JSON '
+            'в котором имена авторов, мы добавим их в нашу базу.' + '<br>'
+            'А вот какие писатели нам уже известны:' + '<br>'
+        )
+        response += (',  '.join(self.existing_authors))
         return HttpResponse(response)

@@ -11,5 +11,6 @@ urlpatterns = [
         views.all_books_for_author,
         name='all_books_for_author'
     ),
-    path('add_authors/', views.add_authors, name='add_authors')
+    path('add_authors/', views.add_authors, name='add_authors'),
+    path('add_authors_v2/', views.AddAuthors.as_view())
 ]
