@@ -44,7 +44,6 @@ class AddAuthors(View):
                 response += (f'{name} - уже есть в нашей базе, спасибо')
                 response += '<br>'
             else:
-                name = author['name']
                 Author.objects.create(name=author['name'])
                 response += (f'{name} - добавлен в список авторов')
                 response += '<br>'
