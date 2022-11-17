@@ -33,34 +33,6 @@ def all_books_for_author(request, author_id):
     return JsonResponse(desired_books, safe=False)
 
 
-def add_authors(request):
-    """принимает POST запрос с JSON в котором имена авторов.
-    добавляет в базу данных имена которых там ещё нет.
-    При GET запросе подскажет что происходит."""
-    existing_authors = [author.name for author in Author.objects.all()]
-    if request.method == 'POST':
-        response = ''
-        for author in json.loads(request.body):
-            name = author['name']
-            if name in existing_authors:
-                response += (f'{name} - уже есть в нашей базе, спасибо')
-                response += '<br>'
-            else:
-                name = author['name']
-                Author.objects.create(name=author['name'])
-                response += (f'{name} - добавлен в список авторов')
-                response += '<br>'
-        return HttpResponse(response)
-    if request.method == 'GET':
-        response = (
-            'Привет, по этому адресу нужно отправлять пост запрос с JSON '
-            'в котором имена авторов, мы добавим их в нашу базу.'
-            'А вот какие писатели нам уже известны:'
-        )
-        response += (',  '.join(existing_authors))
-        return HttpResponse(response)
-
-
 class AddAuthors(View):
     existing_authors = [author.name for author in Author.objects.all()]
 
